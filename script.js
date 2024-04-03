@@ -2,6 +2,7 @@
 
 let audioContext; // Define audioContext globally
 let object; // Define object globally
+let volumeDisplay; // Define volumeDisplay globally
 
 function initializeAudioContext() {
     // Check if audioContext is already initialized
@@ -25,17 +26,52 @@ document.body.appendChild(renderer.domElement);
 
 const controls = new THREE.OrbitControls(camera, renderer.domElement);
 
+//ambient light
+var light = new THREE.AmbientLight(0xffffff); // soft white light
+scene.add(light);
+
+//create sky
+var skyGeo = new THREE.SphereGeometry(1000, 25, 25);
+var loader  = new THREE.TextureLoader();
+
+loader.load("textures/nightsky.png", function(texture) {
+    var skymaterial = new THREE.MeshPhongMaterial({ 
+        map: texture,
+    });
+    skymaterial.side = THREE.BackSide; // Set the side property on skymaterial
+    var sky = new THREE.Mesh(skyGeo, skymaterial);
+    scene.add(sky);
+});     
+
 //add plane
-const plane = new THREE.Plane(new THREE.Vector3(0, 1, 0));
-const planeHelper = new THREE.PlaneHelper(plane, 200, 0xaaaaaa);
-scene.add(planeHelper);
+var loader = new THREE.TextureLoader();
+
+loader.load('textures/ground.png', function(texture) {
+    texture.wrapS = THREE.RepeatWrapping;
+    texture.wrapT = THREE.RepeatWrapping;
+    texture.repeat.set(4, 4); // Repeat the texture 4 times in both directions
+
+    var geometry = new THREE.PlaneGeometry(200, 200);
+    var material = new THREE.MeshBasicMaterial({ map: texture, side: THREE.DoubleSide });
+    var plane = new THREE.Mesh(geometry, material);
+    plane.rotation.x = -Math.PI / 2; // Rotate the plane to make it horizontal
+    plane.position.y = -1;
+    scene.add(plane);
+});
 
 // Create a sphere for visualization
-const geometry = new THREE.BoxGeometry(1, 1, 1);
-const material = new THREE.MeshBasicMaterial({ color: 0xff0000 });
-object = new THREE.Mesh(geometry, material);
-scene.add(object);
-object.visible = false; // Initially hide the object
+
+loader = new THREE.TextureLoader();
+
+    loader.load('textures/sun.jpg', function(texture) {
+    const sungeo = new THREE.SphereGeometry(15, 32, 32);
+    const sunmat = new THREE.MeshBasicMaterial({ map: texture });
+    object = new THREE.Mesh(sungeo, sunmat);
+    object.position.x = -100;
+    object.position.y = 30;
+    scene.add(object);
+    object.visible = false; // Initially hide the object
+});
 
 // Function to handle user audio input
 function handleAudioInput() {
@@ -60,15 +96,17 @@ function handleAudioInput() {
                 let average = sum / bufferLength;
                 if (average > 20 && average <= 50) { // Adjust the threshold levels as needed
                     object.visible = true;
-                    object.material.color.set(0xff0000); // Red color
+                    // Set the initial scale to 0
+                    object.scale.set(0, 0, 0);
+                    gsap.to(object.scale, { x: 1, y: 1, z: 1, duration: 4, onComplete: function() {
+                        object.visible = false;
+                    }});
                 } else if (average > 50 && average <= 100) {
-                    object.visible = true;
-                    object.material.color.set(0x00ff00); // Green color
+                   
                 } else if (average > 100) {
-                    object.visible = true;
-                    object.material.color.set(0x0000ff); // Blue color
+                    
                 } else {
-                    object.visible = false;
+                    
                 }
 
                 volumeDisplay.textContent = 'Volume Level: ' + Math.round(average);
