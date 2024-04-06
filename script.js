@@ -2,7 +2,9 @@
 
 let audioContext; // Define audioContext globally
 let object; // Define object globally
+let meteor;
 let volumeDisplay; // Define volumeDisplay globally
+let average;
 
 function initializeAudioContext() {
     // Check if audioContext is already initialized
@@ -51,19 +53,33 @@ loader.load('textures/ground.png', function(texture) {
     texture.wrapT = THREE.RepeatWrapping;
     texture.repeat.set(4, 4); // Repeat the texture 4 times in both directions
 
-    var geometry = new THREE.PlaneGeometry(200, 200);
+    var geometry = new THREE.BoxGeometry(200, 200, 3);
     var material = new THREE.MeshBasicMaterial({ map: texture, side: THREE.DoubleSide });
     var plane = new THREE.Mesh(geometry, material);
     plane.rotation.x = -Math.PI / 2; // Rotate the plane to make it horizontal
-    plane.position.y = -1;
+    plane.position.y = -3.5;
     scene.add(plane);
+
+    //mountaintains
+    var geometry = new THREE.ConeGeometry(10, 8, 4);
+    var mountain = new THREE.Mesh(geometry, material);
+    mountain.position.set(-30, 1.5, 18);
+    scene.add(mountain);
+    var geometry = new THREE.ConeGeometry(20, 13, 4);
+    mountain = new THREE.Mesh(geometry, material);
+    mountain.position.set(-40, 4, 10);
+    scene.add(mountain);
+    var geometry = new THREE.ConeGeometry(30, 20, 4);
+    mountain = new THREE.Mesh(geometry, material);
+    mountain.position.set(-60, 7, -9);
+    scene.add(mountain);
+
 });
 
 // Create a sphere for visualization
-
+//moon
 loader = new THREE.TextureLoader();
-
-    loader.load('textures/sun.jpg', function(texture) {
+loader.load('textures/moon.jpg', function(texture) {
     const sungeo = new THREE.SphereGeometry(15, 32, 32);
     const sunmat = new THREE.MeshBasicMaterial({ map: texture });
     object = new THREE.Mesh(sungeo, sunmat);
@@ -73,6 +89,17 @@ loader = new THREE.TextureLoader();
     object.visible = false; // Initially hide the object
 });
 
+//meteor
+loader = new THREE.TextureLoader();
+loader.load('textures/sun.jpg', function(texture) {
+    var meteorgeo = new THREE.SphereGeometry(15, 32, 32);
+    var meteormat = new THREE.MeshBasicMaterial({ map: texture });
+    meteor = new THREE.Mesh(meteorgeo, meteormat);
+    meteor.position.set(-50, 50, 0);
+    scene.add(meteor);
+    meteor.visible = false; // Initially hide the object
+
+});
 // Function to handle user audio input
 function handleAudioInput() {
     console.log('Requesting microphone access...');
@@ -93,7 +120,7 @@ function handleAudioInput() {
                 for (let i = 0; i < bufferLength; i++) {
                     sum += dataArray[i];
                 }
-                let average = sum / bufferLength;
+                //average = sum / bufferLength; retirar comment !!!!
                 if (average > 20 && average <= 50) { // Adjust the threshold levels as needed
                     object.visible = true;
                     // Set the initial scale to 0
@@ -102,7 +129,13 @@ function handleAudioInput() {
                         object.visible = false;
                     }});
                 } else if (average > 50 && average <= 100) {
-                   
+                    meteor.visible = true;
+                    meteor.scale.set(0, 0, 0);
+                    gsap.to(meteor.position, { y: 4, x: 0, z: 20, duration: 6 });
+                    gsap.to(meteor.scale, { x: 0.5, y: 0.5, z: 0.5, duration: 6, onComplete: function() {
+                        meteor.visible = false;
+                        meteor.position.set(-50, 50, 50);
+                    }});
                 } else if (average > 100) {
                     
                 } else {
@@ -110,6 +143,8 @@ function handleAudioInput() {
                 }
 
                 volumeDisplay.textContent = 'Volume Level: ' + Math.round(average);
+
+                average= 0; //retirar comment !!!!
 
             }
             draw();
@@ -130,6 +165,21 @@ function createStartButton() {
     startButton.textContent = 'Start Visualization';
     startButton.addEventListener('click', handleAudioInput);
     buttonContainer.appendChild(startButton);
+
+    const volumeButton50 = document.createElement('button');
+    volumeButton50.textContent = 'Set Volume to 50';
+    volumeButton50.addEventListener('click', function() {
+        average = 50;
+    });
+    buttonContainer.appendChild(volumeButton50);
+
+    const volumeButton70 = document.createElement('button');
+    volumeButton70.textContent = 'Set Volume to 70';
+    volumeButton70.addEventListener('click', function() {
+        average = 70;
+    });
+    buttonContainer.appendChild(volumeButton70);
+
     document.body.appendChild(buttonContainer);
 
     volumeDisplay = document.createElement('div');
