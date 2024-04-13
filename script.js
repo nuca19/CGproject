@@ -5,6 +5,7 @@ let object; // Define object globally
 let meteor;
 let volumeDisplay; // Define volumeDisplay globally
 let average;
+let watertexture;
 
 function initializeAudioContext() {
     // Check if audioContext is already initialized
@@ -17,16 +18,20 @@ function initializeAudioContext() {
 
 // Initialize Three.js scene
 const scene = new THREE.Scene();
-const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-camera.position.z = 0; 
-camera.position.y = 2; 
-camera.position.x = 3; 
+const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);~
+camera.position.set(0, 1, 0);
 const renderer = new THREE.WebGLRenderer();
 renderer.setSize(window.innerWidth, window.innerHeight);
 document.body.appendChild(renderer.domElement);
 //renderer.setClearColor(0xFFFFFF, 1);
 
 const controls = new THREE.OrbitControls(camera, renderer.domElement);
+controls.target.set(-4, 1, 0);
+
+const axes = new THREE.AxesHelper(15);
+axes.position.set(-20, 0, 0);
+
+scene.add(axes);
 
 //ambient light
 var light = new THREE.AmbientLight(0xffffff); // soft white light
@@ -36,24 +41,26 @@ scene.add(light);
 var skyGeo = new THREE.SphereGeometry(1000, 25, 25);
 var loader  = new THREE.TextureLoader();
 
-loader.load("textures/nightsky.png", function(texture) {
+loader.load("textures/nightsky2.jpg", function(texture) {
+    texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
+    texture.repeat.set(5, 5); // Repeat the texture 10 times in both directions
+
     var skymaterial = new THREE.MeshPhongMaterial({ 
         map: texture,
     });
     skymaterial.side = THREE.BackSide; // Set the side property on skymaterial
     var sky = new THREE.Mesh(skyGeo, skymaterial);
     scene.add(sky);
-});     
+});   
 
 //add plane
 var loader = new THREE.TextureLoader();
-
 loader.load('textures/ground.png', function(texture) {
     texture.wrapS = THREE.RepeatWrapping;
     texture.wrapT = THREE.RepeatWrapping;
     texture.repeat.set(4, 4); // Repeat the texture 4 times in both directions
 
-    var geometry = new THREE.BoxGeometry(200, 200, 3);
+    var geometry = new THREE.BoxGeometry(600, 600, 3);
     var material = new THREE.MeshBasicMaterial({ map: texture, side: THREE.DoubleSide });
     var plane = new THREE.Mesh(geometry, material);
     plane.rotation.x = -Math.PI / 2; // Rotate the plane to make it horizontal
@@ -61,19 +68,64 @@ loader.load('textures/ground.png', function(texture) {
     scene.add(plane);
 
     //mountaintains
-    var geometry = new THREE.ConeGeometry(10, 8, 4);
+    var geometry = new THREE.ConeGeometry(25, 15, 4);
     var mountain = new THREE.Mesh(geometry, material);
-    mountain.position.set(-30, 1.5, 18);
+    mountain.position.set(-80, 1, 50);
     scene.add(mountain);
-    var geometry = new THREE.ConeGeometry(20, 13, 4);
+    var geometry = new THREE.ConeGeometry(35, 25, 4);
     mountain = new THREE.Mesh(geometry, material);
-    mountain.position.set(-40, 4, 10);
+    mountain.position.set(-80, 4, 20);
     scene.add(mountain);
-    var geometry = new THREE.ConeGeometry(30, 20, 4);
+    var geometry = new THREE.ConeGeometry(50, 35, 4);
     mountain = new THREE.Mesh(geometry, material);
-    mountain.position.set(-60, 7, -9);
+    mountain.position.set(-80, 7, -10);
+    scene.add(mountain);
+    var geometry = new THREE.ConeGeometry(20, 20, 4);
+    mountain = new THREE.Mesh(geometry, material);
+    mountain.position.set(15, -0.5, 80);
     scene.add(mountain);
 
+});
+//river
+loader = new THREE.TextureLoader();
+loader.load('textures/water.jpg', function(texture) {
+    watertexture = texture;
+    // Define the points along the path of the river
+    const points = [
+        new THREE.Vector3(-55, -3, 12),
+        new THREE.Vector3(-50, -3, 10),
+        new THREE.Vector3(-20, -3, -1),
+        new THREE.Vector3(-10, -3, -1),
+        new THREE.Vector3(-5, -3, 15),
+        new THREE.Vector3(20, -3, 20),
+        new THREE.Vector3(20, -3, 40),
+        new THREE.Vector3(20, -3, 60),
+        new THREE.Vector3(50, -3, 80)
+    ];
+
+    // Create a curve from the points
+    const curve = new THREE.CatmullRomCurve3(points);
+    const riverGeometry = new THREE.TubeGeometry(curve, 64, 2, 8, false);
+    const riverMaterial = new THREE.MeshPhongMaterial({
+        map: texture,
+        transparent: true,
+        opacity: 0.7
+    });
+    const river = new THREE.Mesh(riverGeometry, riverMaterial);
+    texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
+    scene.add(river);
+
+    const lakeGeometry = new THREE.PlaneGeometry(50, 50, 10);
+
+    // Create the lake mesh
+    const lake = new THREE.Mesh(lakeGeometry, riverMaterial);
+
+    // Position the lake at the end of the vector
+    lake.position.set(50,-1, 80);
+    lake.rotation.x = -Math.PI / 2;
+
+    // Add the lake to the scene
+    scene.add(lake);
 });
 
 // Create a sphere for visualization
@@ -191,7 +243,9 @@ function animate() {
     requestAnimationFrame(animate);
 
     // Update your scene here
-
+    if (watertexture) {
+        watertexture.offset.x -= 0.001;
+    }
     renderer.render(scene, camera);
     controls.update();
 }
