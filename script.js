@@ -128,6 +128,43 @@ loader.load('textures/water.jpg', function(texture) {
     scene.add(lake);
 });
 
+var city = new THREE.Group();
+
+var buildings = [
+    { position: { x: -5, y: 0, z: -20 }, size: { width: 6, height: 15, depth: 6 } },
+    { position: { x: 5, y: 0, z: -15 }, size: { width: 6, height: 12, depth: 6 } },
+    { position: { x: 15, y: 0, z: -10 }, size: { width: 6, height: 18, depth: 6 } },
+    { position: { x: -5, y: 0, z: -5 }, size: { width: 6, height: 9, depth: 6 } },
+    { position: { x: 6, y: 0, z: -3 }, size: { width: 6, height: 6, depth: 6 } },
+    { position: { x: 10, y: 0, z: -25 }, size: { width: 6, height: 21, depth: 6 } },
+    { position: { x: -15, y: 0, z: -15 }, size: { width: 6, height: 12, depth: 6 } },
+];
+
+
+// Create the buildings
+for (var i = 0; i < buildings.length; i++) {
+    // Create a box geometry for the building
+    var buildingGeometry = new THREE.BoxGeometry(buildings[i].size.width, buildings[i].size.height, buildings[i].size.depth);
+
+    // Create a basic material for the building
+    var buildingMaterial = new THREE.MeshBasicMaterial({color: 0x1C1D22});
+
+    // Create a mesh for the building
+    var building = new THREE.Mesh(buildingGeometry, buildingMaterial);
+
+    // Position the building
+    building.position.set(buildings[i].position.x, buildings[i].size.height / 2, buildings[i].position.z);
+
+    // Add the building to the city
+    city.add(building);
+}
+
+// Position the city
+city.position.set(10, -2, -60);
+
+// Add the city to the scene
+scene.add(city);
+
 // Create a sphere for visualization
 //moon
 loader = new THREE.TextureLoader();
@@ -196,7 +233,7 @@ function handleAudioInput() {
 
                 volumeDisplay.textContent = 'Volume Level: ' + Math.round(average);
 
-                average= 0; //retirar comment !!!!
+                average= 0; //retirar quando usar voz!!!!
 
             }
             draw();
