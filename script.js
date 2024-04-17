@@ -1,4 +1,5 @@
-
+import { PointerLockControls } from '/js/PointerLockControls.js';
+window.PointerLockControls = PointerLockControls;
 
 let audioContext; // Define audioContext globally
 let object; // Define object globally
@@ -18,15 +19,12 @@ function initializeAudioContext() {
 
 // Initialize Three.js scene
 const scene = new THREE.Scene();
-const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);~
+const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 2000);
 camera.position.set(0, 1, 0);
 const renderer = new THREE.WebGLRenderer();
 renderer.setSize(window.innerWidth, window.innerHeight);
 document.body.appendChild(renderer.domElement);
 //renderer.setClearColor(0xFFFFFF, 1);
-
-const controls = new THREE.OrbitControls(camera, renderer.domElement);
-controls.target.set(-4, 1, 0);
 
 const axes = new THREE.AxesHelper(15);
 axes.position.set(-20, 0, 0);
@@ -86,14 +84,70 @@ loader.load('textures/ground.png', function(texture) {
     scene.add(mountain);
 
 });
+
+// Function to create a tree
+function createTree() {
+    var textureLoader = new THREE.TextureLoader();
+    var leavesTexture = textureLoader.load('textures/leaves.png');
+    var trunkTexture = textureLoader.load('textures/trunk.jpg'); // Load the trunk texture
+
+    // Repeat the texture
+    leavesTexture.wrapS = THREE.RepeatWrapping;
+    leavesTexture.wrapT = THREE.RepeatWrapping;
+    leavesTexture.repeat.set(3, 3);
+
+    // Repeat the trunk texture
+    trunkTexture.wrapS = THREE.RepeatWrapping;
+    trunkTexture.wrapT = THREE.RepeatWrapping;
+    trunkTexture.repeat.set(3, 3); // Adjust these values as needed
+
+    var geometry = new THREE.ConeGeometry(1, 2, 4);
+    var material = new THREE.MeshPhongMaterial({map: leavesTexture});
+    var treeTop = new THREE.Mesh(geometry, material);
+
+    geometry = new THREE.CylinderGeometry(0.25, 0.25, 1.5);
+    material = new THREE.MeshPhongMaterial({map: trunkTexture}); // Apply the trunk texture
+    var treeTrunk = new THREE.Mesh(geometry, material);
+
+    treeTrunk.position.y = -1.75;
+    treeTop.add(treeTrunk);
+
+    return treeTop;
+}
+
+// Function to create a forest
+function createForest(x, y, z, treeCount) {
+    var forest = new THREE.Group();
+
+    for (var i = 0; i < treeCount; i++) {
+        var tree = createTree();
+        tree.position.set(
+            x + Math.random() * 50 - 25, // Increased range for random position
+            y,
+            z + Math.random() * 50 - 25  // Increased range for random position
+        );
+        forest.add(tree);
+    }
+
+    return forest;
+}
+
+// Create forests
+var forest1 = createForest(-30, 0, -30, 50);
+scene.add(forest1);
+var forest3 = createForest(-30, 0, 40, 50);
+scene.add(forest3);
+
 //river
 loader = new THREE.TextureLoader();
 loader.load('textures/water.jpg', function(texture) {
     watertexture = texture;
     // Define the points along the path of the river
     const points = [
-        new THREE.Vector3(-55, -3, 12),
-        new THREE.Vector3(-50, -3, 10),
+        new THREE.Vector3(-75, 2, 10),
+        new THREE.Vector3(-64, 0, 8),
+        new THREE.Vector3(-61, -2, 12),
+        new THREE.Vector3(-50, -3, 8),
         new THREE.Vector3(-20, -3, -1),
         new THREE.Vector3(-10, -3, -1),
         new THREE.Vector3(-5, -3, 15),
@@ -128,8 +182,56 @@ loader.load('textures/water.jpg', function(texture) {
     scene.add(lake);
 });
 
-var city = new THREE.Group();
+function createCabin() {
+    var cabin = new THREE.Group();
 
+    // Create the walls
+    var geometry = new THREE.PlaneGeometry(5, 5);
+    var material = new THREE.MeshPhongMaterial({color: 0x8b4513, side: THREE.DoubleSide}); // Make the walls double-sided
+    var wall1 = new THREE.Mesh(geometry, material);
+    var wall2 = wall1.clone();
+    var wall3 = wall1.clone();
+    var wall4 = wall1.clone();
+
+    wall1.rotation.y = Math.PI;
+    wall2.rotation.y = Math.PI / 2;
+    wall3.rotation.y = -Math.PI / 2;
+    wall4.rotation.y = 0;
+
+    wall1.position.z = 2.5;
+    wall2.position.x = 2.5;
+    wall3.position.x = -2.5;
+    wall4.position.z = -2.5;
+
+    cabin.add(wall1, wall2, wall4);
+
+    // Create the roof
+    geometry = new THREE.ConeGeometry(5, 2, 4);
+    material = new THREE.MeshPhongMaterial({color: 0x8b4513});
+    var roof = new THREE.Mesh(geometry, material);
+    roof.position.y = 3.5;
+    roof.rotation.y = Math.PI / 4;
+    cabin.add(roof);
+
+    // Create the door
+    geometry = new THREE.BoxGeometry(1, 2, 0.1);
+    material = new THREE.MeshPhongMaterial({color: 0x663300});
+    var door = new THREE.Mesh(geometry, material);
+    door.position.y = -1.5;
+    door.position.z = 2.5;
+    cabin.add(door);
+
+    return cabin;
+}
+
+// Create a cabin and add it to the scene
+var cabin = createCabin();
+cabin.position.set(0, 2, 0); // Set the position to the starting position
+cabin.scale.set(2, 2, 2); // Scale the cabin
+scene.add(cabin);
+
+
+var city = new THREE.Group();
 var buildings = [
     { position: { x: -5, y: 0, z: -20 }, size: { width: 6, height: 15, depth: 6 } },
     { position: { x: 5, y: 0, z: -15 }, size: { width: 6, height: 12, depth: 6 } },
@@ -276,6 +378,34 @@ function createStartButton() {
     document.body.appendChild(volumeDisplay);
 }
 
+function setupControlsAndListeners(camera) {
+    const controls = new PointerLockControls(camera, document.body);
+
+
+    document.addEventListener('keydown', function(event) {
+        const key = event.key;
+        const speed =3;
+        switch (key) {
+            case "w":
+                controls.moveForward(speed);
+                break;
+            case "a":
+                controls.moveRight(-speed);
+                break;
+            case "s":
+                controls.moveForward(-speed);
+                break;
+            case "d":
+                controls.moveRight(speed);
+                break;
+        }
+    }, false);
+
+    document.addEventListener('click', function () {
+        controls.lock();
+    }, false);
+}
+
 function animate() {
     requestAnimationFrame(animate);
 
@@ -284,9 +414,9 @@ function animate() {
         watertexture.offset.x -= 0.001;
     }
     renderer.render(scene, camera);
-    controls.update();
 }
 
 // Ensure start button is created after DOM content is loaded
 window.addEventListener('DOMContentLoaded', createStartButton);
+setupControlsAndListeners(camera);
 animate();
