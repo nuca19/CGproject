@@ -1,10 +1,12 @@
 import { PointerLockControls } from '/js/PointerLockControls.js';
 window.PointerLockControls = PointerLockControls;
 
-let audioContext; // Define audioContext globally
-let object; // Define object globally
+let object;
 let meteor;
-let volumeDisplay; // Define volumeDisplay globally
+let volumeModel;
+
+let audioContext;
+let volumeDisplay;
 let average;
 let watertexture;
 
@@ -228,7 +230,7 @@ function createCabin() {
 var cabin = createCabin();
 cabin.position.set(0, 2, 0); // Set the position to the starting position
 cabin.scale.set(2, 2, 2); // Scale the cabin
-scene.add(cabin);
+//scene.add(cabin);
 
 
 var city = new THREE.Group();
@@ -263,9 +265,17 @@ for (var i = 0; i < buildings.length; i++) {
 
 // Position the city
 city.position.set(10, -2, -60);
-
-// Add the city to the scene
 scene.add(city);
+
+
+
+const volumeModelGeometry = new THREE.BoxGeometry(1, 1, 1);
+volumeModelGeometry.translate(0, 0.5, 0);
+const volumeModelMaterial = new THREE.MeshBasicMaterial({color: 0x00ff00});
+volumeModel = new THREE.Mesh(volumeModelGeometry, volumeModelMaterial);
+volumeModel.position.set(-1, 0, -3);
+volumeModel.scale.y = 0;
+scene.add(volumeModel);
 
 // Create a sphere for visualization
 //moon
@@ -304,41 +314,46 @@ function handleAudioInput() {
             analyser.fftSize = 256;
             const bufferLength = analyser.frequencyBinCount;
             const dataArray = new Uint8Array(bufferLength);
-            function draw() {
-                requestAnimationFrame(draw);
-                analyser.getByteFrequencyData(dataArray);
-                let sum = 0;
-                for (let i = 0; i < bufferLength; i++) {
-                    sum += dataArray[i];
-                }
-                //average = sum / bufferLength; retirar comment !!!!
-                if (average > 20 && average <= 50) { // Adjust the threshold levels as needed
-                    object.visible = true;
-                    // Set the initial scale to 0
-                    object.scale.set(0, 0, 0);
-                    gsap.to(object.scale, { x: 1, y: 1, z: 1, duration: 4, onComplete: function() {
-                        object.visible = false;
-                    }});
-                } else if (average > 50 && average <= 100) {
-                    meteor.visible = true;
-                    meteor.scale.set(0, 0, 0);
-                    gsap.to(meteor.position, { y: 4, x: 0, z: 20, duration: 6 });
-                    gsap.to(meteor.scale, { x: 0.5, y: 0.5, z: 0.5, duration: 6, onComplete: function() {
-                        meteor.visible = false;
-                        meteor.position.set(-50, 50, 50);
-                    }});
-                } else if (average > 100) {
+            setTimeout(() => {
+                function draw() {
+                    requestAnimationFrame(draw);
+                    analyser.getByteFrequencyData(dataArray);
+                    let sum = 0;
+                    for (let i = 0; i < bufferLength; i++) {
+                        sum += dataArray[i];
+                    }
+                    //retirar comment !!!!
+                    average = sum / bufferLength;
                     
-                } else {
-                    
+                    if (average > 40 && average <= 50) { // Adjust the threshold levels as needed
+                        object.visible = true;
+                        // Set the initial scale to 0
+                        object.scale.set(0, 0, 0);
+                        gsap.to(object.scale, { x: 1, y: 1, z: 1, duration: 4, onComplete: function() {
+                            object.visible = false;
+                        }});
+                    } else if (average > 75 && average <= 100) {
+                        meteor.visible = true;
+                        meteor.scale.set(0, 0, 0);
+                        gsap.to(meteor.position, { y: 4, x: 0, z: 20, duration: 6 });
+                        gsap.to(meteor.scale, { x: 0.5, y: 0.5, z: 0.5, duration: 6, onComplete: function() {
+                            meteor.visible = false;
+                            meteor.position.set(-50, 50, 50);
+                        }});
+                    } else if (average > 100) {
+                        
+                    } else {
+                        
+                    }
+
+                    volumeDisplay.textContent = 'Volume Level: ' + Math.round(average);
+                    volumeModel.scale.y = average / 100 *2;
+
+                    //average= 0; //retirar quando usar voz!!!!
+
                 }
-
-                volumeDisplay.textContent = 'Volume Level: ' + Math.round(average);
-
-                average= 0; //retirar quando usar voz!!!!
-
-            }
-            draw();
+                draw();
+            }, 2000);
         })
         .catch(handleAudioInputError);
 }
@@ -405,6 +420,7 @@ function setupControlsAndListeners(camera) {
         controls.lock();
     }, false);
 }
+
 
 function animate() {
     requestAnimationFrame(animate);
