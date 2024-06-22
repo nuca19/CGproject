@@ -10,10 +10,34 @@
             overflow: hidden;
         }
         #button-container {
-            position: absolute;
-            top: 10px;
-            left: 10px;
-            z-index: 1;
+            position: fixed;
+            top: 7%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        #startButton {
+            padding: 20px;
+            font-size: 20px;
+            background-color: rgb(107, 32, 128);
+            border-radius: 15px;
+            color: white;
+            font-weight: bold;
+        }
+        #volbutcont{
+            position: fixed;
+            top: 0;
+            left: 0;
+            padding: 10px;
+            
+        }
+        #volbutcont button{
+            padding: 5px;
+            font-size: 14px;
+            background-color: rgb(107, 32, 128);
+            border-radius: 10px;
+            color: white;
+            font-weight: bold;
         }
         #volume-display {
             position: absolute;
@@ -25,7 +49,6 @@
     </style>
 </head>
 <body>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.9.1/gsap.min.js"></script>
     <script type="module" src="script.js"></script>
 </body>
