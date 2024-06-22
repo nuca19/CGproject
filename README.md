@@ -1,2 +1,3 @@
-CG project in tree.js
-https://nuca19.github.io
+CG project in tree.js available at:
+
+https://nuca19.github.io/CGproject/
